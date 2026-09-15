@@ -1,0 +1,1035 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Green Light</title>
+<style>
+:root{
+  --midnight:#190B28; --leaf:#008D4E; --lime:#ACDA3B; --stone:#F5F4EF;
+  --lilac:#A37EE7; --flame:#DA4167; --amber:#c9822c; --blue:#2b7fb0; --grey:#6b6870;
+  --bg:#F5F4EF; --panel:#FFFFFF; --ink:#20182b; --ink-soft:#6b6870;
+  --line:#e7e3da; --shadow:0 1px 2px rgba(25,11,40,.06), 0 6px 20px rgba(25,11,40,.06);
+  --shadow-lg:0 10px 34px rgba(25,11,40,.14);
+  --accent:var(--leaf);
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#130b1c; --panel:#1e1428; --ink:#f2eefb; --ink-soft:#a99fc0;
+    --line:#332545; --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 24px rgba(0,0,0,.35);
+    --shadow-lg:0 12px 38px rgba(0,0,0,.5);
+    --stone:#241a30;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#130b1c; --panel:#1e1428; --ink:#f2eefb; --ink-soft:#a99fc0;
+  --line:#332545; --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 24px rgba(0,0,0,.35);
+  --shadow-lg:0 12px 38px rgba(0,0,0,.5);
+  --stone:#241a30;
+}
+*{box-sizing:border-box;}
+[hidden]{display:none!important;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px; padding-left:16px; padding-right:16px;
+}
+img{max-width:100%;}
+a{color:inherit;}
+button{font-family:inherit; cursor:pointer;}
+h1,h2,h3{letter-spacing:-.01em;}
+::selection{background:color-mix(in srgb, var(--lime) 40%, transparent);}
+
+/* ---------- Hero / top bar ---------- */
+.hero{
+  margin:0 -16px; padding:20px 16px 0; position:sticky; top:env(safe-area-inset-top,0px); z-index:40;
+  background:radial-gradient(1100px 220px at 15% -60%, rgba(172,218,59,.22), transparent 60%),
+             linear-gradient(135deg, var(--midnight), #2a1440 60%, var(--midnight));
+  color:#fff; overflow:hidden;
+}
+.hero::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(500px 200px at 90% 0%, rgba(163,126,231,.3), transparent 70%);
+}
+.hero-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; position:relative; z-index:1; padding-bottom:14px;}
+.brand{display:flex; align-items:center; gap:12px; margin-right:auto;}
+.brand-mark{
+  width:40px; height:40px; border-radius:12px;
+  background:linear-gradient(135deg,var(--leaf),var(--lime));
+  display:flex; align-items:center; justify-content:center; font-size:20px; flex:none;
+  box-shadow:0 4px 14px rgba(0,141,78,.35);
+}
+.brand-text h1{font-size:18px; margin:0; font-weight:800;}
+.brand-text p{font-size:11.5px; margin:2px 0 0; color:#cfc6e0; display:flex; align-items:center; gap:5px;}
+.live-dot{width:6px; height:6px; border-radius:50%; background:var(--lime); display:inline-block; animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+
+.btn{
+  border:none; border-radius:11px; padding:10px 16px; font-weight:800; font-size:12.5px;
+  display:inline-flex; align-items:center; gap:6px; box-shadow:var(--shadow);
+}
+.btn-primary{background:var(--lime); color:#12240a;}
+.btn-ghost{background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.18);}
+.btn-ghost.on-light{background:var(--panel); color:var(--ink); border:1px solid var(--line); box-shadow:none;}
+.btn-danger{background:var(--flame); color:#fff;}
+.btn:active{transform:translateY(1px);}
+.btn[disabled]{opacity:.5; pointer-events:none;}
+.btn-sm{padding:7px 12px; font-size:11.5px; border-radius:9px;}
+
+.tabs{display:flex; gap:4px; position:relative; z-index:1; overflow-x:auto;}
+.tabs button{
+  border:none; background:transparent; color:#cabfe0; font-weight:700;
+  font-size:13px; padding:10px 16px; border-radius:12px 12px 0 0; transition:.15s;
+  white-space:nowrap; display:flex; align-items:center; gap:7px; position:relative; top:1px;
+}
+.tabs button .dot{width:7px; height:7px; border-radius:50%;}
+.tabs button.active{background:var(--bg); color:var(--ink);}
+
+/* ---------- Toast ---------- */
+#toasts{position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom,0px)); z-index:80; display:flex; flex-direction:column; gap:8px; max-width:320px;}
+.toast{
+  background:var(--midnight); color:#fff; padding:10px 14px; border-radius:12px;
+  font-size:12.5px; box-shadow:var(--shadow-lg); animation:slidein .25s ease-out;
+  display:flex; gap:8px; align-items:center;
+}
+@keyframes slidein{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+/* ---------- Layout ---------- */
+main{max-width:1240px; margin:0 auto; padding:22px 0 70px;}
+.hint{color:var(--ink-soft); font-size:12.5px; margin:2px 0 16px;}
+.hint b{color:var(--ink);}
+.section-title{display:flex; align-items:center; gap:8px; margin:28px 0 12px;}
+.section-title:first-child{margin-top:0;}
+.section-title h2{font-size:15px; margin:0; font-weight:800;}
+.section-title .count-badge{
+  background:var(--stone); color:var(--ink-soft); font-size:10.5px; font-weight:800;
+  padding:2px 9px; border-radius:20px;
+}
+.section-title .spacer{flex:1;}
+
+/* ---------- Account stat strip ---------- */
+.stat-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:6px;}
+.stat-pill{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px 15px;
+  box-shadow:var(--shadow);
+}
+.stat-pill .n{font-size:21px; font-weight:900; line-height:1.1;}
+.stat-pill .l{font-size:10.5px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; letter-spacing:.02em; margin-top:2px;}
+@media (max-width:700px){ .stat-strip{grid-template-columns:repeat(2,1fr);} }
+
+/* ---------- Calendar (hero centerpiece) ---------- */
+.cal-wrap{
+  background:
+    radial-gradient(900px 260px at 105% -12%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 65%),
+    radial-gradient(700px 240px at -8% 112%, color-mix(in srgb, var(--lime) 16%, transparent), transparent 62%),
+    var(--panel);
+  border:1px solid var(--line); border-radius:24px; padding:22px; box-shadow:var(--shadow-lg);
+  position:relative; overflow:hidden;
+}
+.cal-wrap::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:5px;
+  background:linear-gradient(90deg, var(--accent), var(--lime), var(--accent));
+  background-size:200% 100%; animation:calShimmer 7s linear infinite;
+}
+@keyframes calShimmer{0%{background-position:0% 0;} 100%{background-position:200% 0;}}
+.cal-head{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+.cal-head h2{
+  font-size:22px; margin:0; flex:1; font-weight:900; letter-spacing:-.01em;
+  background:linear-gradient(120deg, var(--ink) 30%, var(--accent));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.cal-nav{display:flex; gap:6px;}
+.icon-btn{
+  width:36px; height:36px; border-radius:11px; border:1px solid var(--line); background:var(--bg);
+  display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900;
+  color:var(--ink); transition:.15s;
+}
+.icon-btn:hover{background:var(--stone); transform:translateY(-1px); box-shadow:var(--shadow);}
+.today-btn{
+  border:1px solid var(--line); background:var(--bg); color:var(--ink-soft); font-weight:800;
+  font-size:11px; padding:0 12px; border-radius:11px; height:36px; transition:.15s;
+}
+.today-btn:hover{background:color-mix(in srgb, var(--accent) 12%, var(--bg)); color:var(--ink);}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; position:relative; z-index:1;}
+.cal-dow{
+  font-size:10.5px; font-weight:900; color:var(--ink-soft); text-align:center; padding:6px 0;
+  text-transform:uppercase; letter-spacing:.05em; border-radius:9px;
+  background:color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.cal-cell{
+  background:linear-gradient(165deg, var(--bg), var(--bg)); border:1px solid var(--line); border-radius:16px; padding:8px;
+  min-height:112px; display:flex; flex-direction:column; gap:5px; transition:.15s;
+}
+.cal-cell.weekend{background:linear-gradient(165deg, color-mix(in srgb, var(--accent) 7%, var(--bg)), var(--bg));}
+.cal-cell.outside{opacity:.25; background:transparent; border-style:dashed;}
+.cal-cell.has-posts{background:linear-gradient(165deg, var(--panel), color-mix(in srgb, var(--accent) 6%, var(--panel)));}
+.cal-cell.has-posts:hover{transform:translateY(-3px); box-shadow:var(--shadow-lg); border-color:color-mix(in srgb, var(--accent) 50%, var(--line));}
+.cal-cell.today{
+  border-color:var(--leaf); border-width:2px;
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--leaf) 16%, transparent), var(--shadow);
+  background:linear-gradient(165deg, color-mix(in srgb, var(--leaf) 12%, var(--panel)), var(--panel));
+}
+.cal-daynum-row{display:flex; align-items:center; justify-content:space-between;}
+.cal-daynum{font-size:12px; font-weight:800; color:var(--ink-soft);}
+.cal-cell.today .cal-daynum{color:var(--leaf);}
+.today-tag{
+  font-size:8.5px; font-weight:900; background:linear-gradient(120deg,var(--leaf),var(--lime)); color:#0c2007;
+  padding:1px 7px; border-radius:20px; text-transform:uppercase; letter-spacing:.03em;
+  box-shadow:0 2px 6px color-mix(in srgb, var(--leaf) 45%, transparent);
+}
+.cal-post{
+  font-size:10.5px; font-weight:700; padding:4px 7px 4px 7px; border-radius:8px; line-height:1.3;
+  background:var(--panel); color:var(--ink); cursor:pointer;
+  border-left:3px solid var(--accent); transition:.12s; display:flex; align-items:center; gap:5px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+.cal-post:hover{transform:translateX(2px) scale(1.03); box-shadow:var(--shadow-lg);}
+.plat-badge{
+  width:15px; height:15px; border-radius:5px; flex:none; font-size:8px; font-weight:900; color:#fff;
+  display:flex; align-items:center; justify-content:center; letter-spacing:0;
+  box-shadow:0 1px 2px rgba(0,0,0,.15);
+}
+.cal-post-title{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.cal-more{font-size:9.5px; color:var(--ink-soft); font-weight:800; padding-left:6px;}
+.cal-legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:18px; padding-top:14px; border-top:1px solid var(--line); position:relative; z-index:1;}
+.cal-legend-item{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--ink-soft);}
+.cal-legend-dot{width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);}
+@media (max-width:760px){
+  .cal-wrap{border-radius:16px; padding:14px;}
+  .cal-grid{grid-template-columns:repeat(7,1fr); gap:4px;}
+  .cal-cell{min-height:72px; padding:4px; border-radius:11px;}
+  .cal-dow{font-size:8px; padding:4px 0;}
+  .cal-post{font-size:8.5px; padding:2px 4px;}
+  .plat-badge{width:11px; height:11px; font-size:6px;}
+  .cal-head h2{font-size:16px;}
+}
+
+/* ---------- Approval cards ---------- */
+.approval-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px;
+  box-shadow:var(--shadow); margin-bottom:12px; position:relative; overflow:hidden;
+}
+.approval-card::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--amber);
+}
+.ac-top{display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; cursor:pointer;}
+.ac-top h3{margin:0; font-size:15px; flex:1;}
+.ac-meta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.pill{
+  font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:20px;
+  background:var(--stone); color:var(--ink-soft); display:inline-flex; align-items:center; gap:4px;
+}
+.ac-people{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
+.ac-people b{color:var(--ink); font-weight:700;}
+.ac-actions{display:flex; gap:8px; flex-wrap:wrap;}
+.ac-actions .btn{flex:1; justify-content:center; min-width:120px;}
+.approve-confirm{
+  margin-top:12px; padding:12px; background:var(--stone); border-radius:12px;
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+}
+.approve-confirm input{
+  flex:1; min-width:140px; padding:8px 10px; border-radius:9px; border:1.5px solid var(--line);
+  background:var(--panel); color:var(--ink); font-size:13px; font-family:inherit;
+}
+.empty-state{
+  color:var(--ink-soft); font-size:12.5px; text-align:center; padding:28px 16px;
+  border:1.5px dashed var(--line); border-radius:14px; background:var(--panel);
+}
+.empty-state .big-emoji{font-size:26px; display:block; margin-bottom:6px;}
+
+/* ---------- Tracker table ---------- */
+.tracker-controls{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;}
+.chip-filter{
+  border:1.5px solid var(--line); background:var(--panel); color:var(--ink-soft); font-weight:700;
+  font-size:11.5px; padding:6px 13px; border-radius:20px;
+}
+.chip-filter.active{background:var(--midnight); color:#fff; border-color:transparent;}
+.search-box{
+  margin-left:auto; padding:7px 12px; border-radius:20px; border:1.5px solid var(--line);
+  background:var(--panel); font-size:12.5px; min-width:180px; color:var(--ink);
+}
+.tracker-table-wrap{overflow-x:auto; border-radius:16px; border:1px solid var(--line); background:var(--panel); box-shadow:var(--shadow);}
+table.tracker{width:100%; border-collapse:collapse; font-size:12.5px; min-width:720px;}
+table.tracker th{
+  text-align:left; padding:11px 14px; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em;
+  color:var(--ink-soft); border-bottom:1.5px solid var(--line); font-weight:800; white-space:nowrap;
+}
+table.tracker td{padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+table.tracker tr:last-child td{border-bottom:none;}
+table.tracker tbody tr{cursor:pointer; transition:.1s;}
+table.tracker tbody tr:hover{background:var(--stone);}
+.status-chip{
+  font-size:10.5px; font-weight:800; padding:4px 10px; border-radius:20px; color:#fff; white-space:nowrap;
+  display:inline-block;
+}
+.t-title{font-weight:700; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.t-sub{color:var(--ink-soft); font-size:11px; margin-top:1px;}
+
+/* ---------- Overview ---------- */
+.ov-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-bottom:8px;}
+.stat-card{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:var(--shadow);}
+.stat-card-head{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+.ring{position:relative; width:72px; height:72px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center;}
+.ring .ring-num{font-size:20px; font-weight:900;}
+.ring::before{content:""; position:absolute; inset:8px; border-radius:50%; background:var(--panel);}
+.ring-num{position:relative; z-index:1;}
+.stat-card-head .titles{flex:1;}
+.stat-card-head .lbl{font-size:13.5px; font-weight:800;}
+.stat-card-head .sub{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.legend{display:flex; flex-direction:column; gap:7px;}
+.legend-row{display:flex; align-items:center; gap:8px; font-size:11.5px;}
+.legend-dot{width:9px; height:9px; border-radius:50%; flex:none;}
+.legend-label{flex:1; color:var(--ink-soft); font-weight:700;}
+.legend-n{font-weight:800;}
+.mini-stats{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+.mini-stat{flex:1; min-width:100px; background:var(--stone); border-radius:11px; padding:9px 12px;}
+.mini-stat .n{font-size:17px; font-weight:900;}
+.mini-stat .l{font-size:10px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; letter-spacing:.02em;}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(20,10,30,.5); z-index:60; backdrop-filter:blur(2px);
+  display:flex; align-items:flex-end; justify-content:center; padding:0;
+}
+@media (min-width:640px){.modal-backdrop{align-items:center; padding:20px;}}
+.modal{
+  background:var(--panel); width:100%; max-width:560px; border-radius:20px 20px 0 0;
+  max-height:92vh; box-shadow:var(--shadow-lg);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+@media (min-width:640px){.modal{border-radius:18px;}}
+.modal h3{margin:0; font-size:17px;}
+.modal-head{padding:18px 18px 12px; border-bottom:1px solid var(--line); flex:none;}
+.modal-body{padding:14px 18px; overflow-y:auto; flex:1 1 auto;}
+.modal-foot{padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line); flex:none;}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:11px; font-weight:800; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; letter-spacing:.02em;}
+.field input, .field select, .field textarea{
+  width:100%; padding:9px 10px; border-radius:9px; border:1.5px solid var(--line);
+  background:var(--bg); color:var(--ink); font-size:13.5px; font-family:inherit;
+}
+.field textarea{min-height:64px; resize:vertical;}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+/* ---------- Content-draft link ---------- */
+.draft-link-row{display:flex; gap:8px; align-items:center;}
+.draft-link-row input{flex:1;}
+.draft-open-btn{white-space:nowrap; text-decoration:none;}
+.audit-box{
+  background:var(--stone); border-radius:10px; padding:10px 12px; font-size:12px;
+  color:var(--ink-soft); font-style:italic; margin:10px 0 4px; line-height:1.5;
+}
+.modal-actions{display:flex; gap:8px; justify-content:space-between;}
+.modal-actions .right{display:flex; gap:8px;}
+
+.footer-note{text-align:center; color:var(--ink-soft); font-size:11px; margin-top:40px; display:flex; align-items:center; justify-content:center; gap:6px;}
+
+.loading{display:flex; align-items:center; justify-content:center; padding:60px 0; color:var(--ink-soft); font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-row">
+    <div class="brand">
+      <div class="brand-mark">🚦</div>
+      <div class="brand-text">
+        <h1>Green Light</h1>
+        <p><span class="live-dot"></span> <span id="subtitle">Live — anyone with this link sees updates instantly</span></p>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="newPostBtn">+ New post</button>
+  </div>
+  <div class="tabs" id="tabSwitch"></div>
+</div>
+
+<main>
+  <div id="content"><div class="loading">Loading shared workspace…</div></div>
+</main>
+
+<div id="toasts"></div>
+
+<!-- Post modal -->
+<div class="modal-backdrop" id="postBackdrop" hidden>
+  <div class="modal" id="postModal"></div>
+</div>
+
+<!--
+  ============================================================================
+  FIREBASE ADAPTER — self-hosted replacement for Claude's built-in "db"
+  capability. This is the ONLY part of the file you need to touch.
+  Everything below this block (the app itself) is unchanged from the Claude
+  Artifact version and just calls window.claude.use("db") like it always
+  did — this block simply answers those calls using your own free Firebase
+  project instead of Claude's platform. (There's no image/video upload
+  feature anymore, so Firebase Storage / the Blaze plan is not needed at
+  all — Firestore alone, on the free Spark plan, is enough.)
+
+  SETUP: see README.md in this folder for the exact click-by-click steps
+  to get a Firebase project and the six values below. Paste them in, save,
+  and everything works.
+  ============================================================================
+-->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getFirestore, collection as fsCollection, doc as fsDoc, onSnapshot as fsOnSnapshot,
+  setDoc, updateDoc, deleteDoc, addDoc, getDocs, getDoc
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+/* ====================== PASTE YOUR FIREBASE CONFIG HERE ====================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBm8pxJogeawN6fkoOHHz7oi0yLkjmf7ds",
+  authDomain: "amna-project-1-fcb5b.firebaseapp.com",
+  projectId: "amna-project-1-fcb5b",
+  storageBucket: "amna-project-1-fcb5b.firebasestorage.app",
+  messagingSenderId: "453847388101",
+  appId: "1:453847388101:web:d9efc25a038ef6e25b05ac",
+};
+/* =============================================================================== */
+
+let firestore = null, initError = null;
+try{
+  const app = initializeApp(firebaseConfig);
+  firestore = getFirestore(app);
+}catch(e){ initError = e; }
+
+function wrapDoc(id, ref){
+  return {
+    id,
+    async get(){
+      const snap = await getDoc(ref);
+      return { id, exists: snap.exists(), data: () => snap.data() };
+    },
+    async set(data){ await setDoc(ref, data); },
+    async update(data){ await updateDoc(ref, data); },
+    async delete(){ await deleteDoc(ref); },
+    onSnapshot(next, err){
+      return fsOnSnapshot(ref, snap=>{ next({ id, exists: snap.exists(), data: ()=>snap.data() }); }, err);
+    },
+  };
+}
+function collection(path){
+  const collRef = fsCollection(firestore, path);
+  return {
+    doc(id){
+      const ref = id ? fsDoc(firestore, path, id) : fsDoc(collRef);
+      return wrapDoc(ref.id, ref);
+    },
+    async add(data){
+      const ref = await addDoc(collRef, data);
+      return wrapDoc(ref.id, ref);
+    },
+    where(){ return this; }, orderBy(){ return this; }, limit(){ return this; },
+    async get(){
+      const snap = await getDocs(collRef);
+      const docs = snap.docs.map(d=>({ id:d.id, exists:true, data:()=>d.data() }));
+      return { docs, size:docs.length, empty:docs.length===0 };
+    },
+    onSnapshot(next, err){
+      return fsOnSnapshot(collRef, snap=>{
+        const docs = snap.docs.map(d=>({ id:d.id, exists:true, data:()=>d.data() }));
+        const changes = snap.docChanges().map(c=>({
+          type: c.type, doc: { id: c.doc.id, exists:true, data: ()=>c.doc.data() }
+        }));
+        next({ docs, size:docs.length, empty:docs.length===0, docChanges:()=>changes });
+      }, err);
+    },
+  };
+}
+
+window.claude = {
+  use: async (name) => {
+    if(initError) throw initError;
+    if(name === "db") return { collection };
+    return null;
+  }
+};
+</script>
+
+<script type="module">
+(function(){
+
+// ---------------- Config / constants ----------------
+const ACCOUNTS = [
+  { id:"MAQCORP", label:"MAQCORP", sub:"Client account", color:"#A37EE7" },
+  { id:"SOL", label:"Splice of Lime", sub:"Company account", color:"#008D4E" },
+];
+const STATUSES = ["Idea","Drafting","Internal Review","Sent for Client Approval","Approved","Scheduled","Posted","On Hold"];
+const STATUS_COLORS = {
+  "Idea":"#8a8593","Drafting":"#c9822c","Internal Review":"#DA4167",
+  "Sent for Client Approval":"#c9822c","Approved":"#008D4E","Scheduled":"#2b7fb0",
+  "Posted":"#1f9e5c","On Hold":"#6b6870",
+};
+const WORK_STATUSES = ["Idea","Drafting","Internal Review","On Hold"];
+const CALENDAR_STATUSES = ["Approved","Scheduled","Posted"];
+const PLATFORMS = ["LI","FB","FB + LI","IG","FB + LI + IG","Other"];
+const PLATFORM_COLORS = { "LI":"#0A66C2", "FB":"#1877F2", "FB + LI":"#5b63c9", "IG":"#c1327a", "FB + LI + IG":"#8b3fa8", "Other":"#6b6870" };
+const PLATFORM_LABEL = { "LI":"in", "FB":"f", "FB + LI":"in", "IG":"ig", "FB + LI + IG":"+", "Other":"•" };
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(iso){
+  if(!iso) return "";
+  const d = new Date(iso+"T00:00:00");
+  if(isNaN(d)) return "";
+  return d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+}
+function todayISO(){
+  const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function platBadge(platform){
+  const color = PLATFORM_COLORS[platform] || PLATFORM_COLORS.Other;
+  const label = PLATFORM_LABEL[platform] || "•";
+  return `<span class="plat-badge" style="background:${color}">${esc(label)}</span>`;
+}
+
+// ---------------- State ----------------
+let currentTab = "MAQCORP"; // "OVERVIEW" | account id
+let posts = [];
+let db = null;
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let knownPosts = new Map();
+let approveOpenId = null;
+let trackerFilter = "All";
+let trackerSearch = "";
+
+// ---------------- Boot ----------------
+async function boot(){
+  try{ db = await claude.use("db"); }catch(e){ db = null; }
+  if(!db){
+    document.getElementById("content").innerHTML =
+      '<div class="loading">This view can\'t reach the shared workspace right now — try reopening the page.</div>';
+    return;
+  }
+  renderTabs();
+  subscribePosts();
+}
+
+function toast(msg, color){
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.style.borderLeft = "4px solid " + (color || "var(--lime)");
+  el.textContent = msg;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(()=>{ el.style.transition="opacity .3s"; el.style.opacity="0"; setTimeout(()=>el.remove(),300); }, 4200);
+}
+
+function subscribePosts(){
+  db.collection("posts").onSnapshot(snap=>{
+    const isFirst = knownPosts.size === 0 && posts.length === 0;
+    const changes = snap.docChanges();
+    const newKnown = new Map();
+    const arr = [];
+    snap.docs.forEach(d=>{
+      const data = d.data() || {};
+      arr.push(Object.assign({id:d.id}, data));
+      newKnown.set(d.id, data);
+    });
+    posts = arr;
+    if(!isFirst){
+      changes.forEach(ch=>{
+        const data = ch.doc.data();
+        if(!data) return;
+        const prev = knownPosts.get(ch.doc.id);
+        const title = (data.title||"a post").slice(0,32);
+        if(ch.type === "modified" && prev && prev.status !== data.status){
+          toast(`"${title}" → ${data.status}`, STATUS_COLORS[data.status]);
+        } else if(ch.type === "added"){
+          toast(`New post added: "${title}"`, "#008D4E");
+        } else if(ch.type === "removed"){
+          toast(`"${title}" was deleted`, "#DA4167");
+        }
+      });
+    }
+    knownPosts = newKnown;
+    render();
+  }, err=>{
+    document.getElementById("content").innerHTML = `<div class="loading">Lost the connection to shared data (${esc(err.code)}). Try reopening.</div>`;
+  });
+}
+
+function auditLog(p){
+  const parts = [];
+  if(p.draftOwner) parts.push(`Drafted by ${p.draftOwner}.`);
+  if(p.clientApprover) parts.push(`Sent to ${p.clientApprover} for approval.`);
+  if(p.approvalDate) parts.push(`Approved by ${p.clientApprover||"client"} on ${fmtDate(p.approvalDate)}.`);
+  if(p.scheduledDate) parts.push(`Scheduled for ${fmtDate(p.scheduledDate)}.`);
+  if(p.status === "Posted") parts.push(`Posted by ${p.draftOwner||""} on ${fmtDate(p.scheduledDate||p.approvalDate)}.`);
+  return parts.join(" ") || "No activity yet.";
+}
+
+// ---------------- Tabs ----------------
+function renderTabs(){
+  const el = document.getElementById("tabSwitch");
+  const tabs = [{id:"OVERVIEW", label:"Overview", color:"#ACDA3B"}].concat(ACCOUNTS);
+  el.innerHTML = tabs.map(t=>{
+    const active = t.id === currentTab;
+    return `<button data-tab="${t.id}" class="${active?'active':''}">
+      ${t.id!=="OVERVIEW" ? `<span class="dot" style="background:${t.color}"></span>` : "📊"} ${esc(t.label)}
+    </button>`;
+  }).join("");
+  el.querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      currentTab = btn.dataset.tab;
+      approveOpenId = null; trackerFilter = "All"; trackerSearch = "";
+      renderTabs();
+      render();
+    });
+  });
+}
+
+document.getElementById("newPostBtn").addEventListener("click", ()=> openPostModal(null));
+
+// ---------------- Render dispatch ----------------
+function captureFocus(){
+  const el = document.activeElement;
+  if(el && el.id === "trackerSearch"){
+    return { id: el.id, start: el.selectionStart, end: el.selectionEnd };
+  }
+  return null;
+}
+function restoreFocus(info){
+  if(!info) return;
+  const el = document.getElementById(info.id);
+  if(el){ el.focus(); try{ el.setSelectionRange(info.start, info.end); }catch(e){} }
+}
+
+function render(){
+  // A remote change (another viewer editing) triggers a full re-render via the live
+  // subscription — without this, anyone typing in the search box would have focus and
+  // cursor position yanked away mid-keystroke every time a teammate's edit came in.
+  const focusInfo = captureFocus();
+  if(currentTab === "OVERVIEW"){
+    document.getElementById("subtitle").textContent = "Both accounts at a glance — live";
+    renderOverview();
+  } else {
+    const acc = ACCOUNTS.find(a=>a.id===currentTab);
+    document.getElementById("subtitle").textContent = `${acc.label} — calendar, approvals & tracker, all in one place`;
+    renderAccountPage(posts.filter(p=>p.account===currentTab), acc);
+  }
+  restoreFocus(focusInfo);
+}
+
+// ---------------- Account page (calendar + approvals + tracker, integrated) ----------------
+function renderAccountPage(list, acc){
+  document.documentElement.style.setProperty("--accent", acc.color);
+
+  const awaiting = list.filter(p=>p.status==="Sent for Client Approval").sort((a,b)=>(a.suggestedDate||"9999").localeCompare(b.suggestedDate||"9999"));
+  const working = list.filter(p=>WORK_STATUSES.includes(p.status));
+  const ready = list.filter(p=>CALENDAR_STATUSES.includes(p.status));
+
+  document.getElementById("content").innerHTML = `
+    <div class="stat-strip">
+      <div class="stat-pill"><div class="n">${list.length}</div><div class="l">Total posts</div></div>
+      <div class="stat-pill"><div class="n" style="color:${STATUS_COLORS['Sent for Client Approval']}">${awaiting.length}</div><div class="l">Awaiting decision</div></div>
+      <div class="stat-pill"><div class="n">${working.length}</div><div class="l">In the works</div></div>
+      <div class="stat-pill"><div class="n" style="color:var(--leaf)">${ready.length}</div><div class="l">Ready to post</div></div>
+    </div>
+
+    <div class="section-title"><h2>📅 Calendar</h2><span class="spacer"></span></div>
+    <div id="calHost"></div>
+
+    <div class="section-title"><h2>Needs a decision</h2><span class="count-badge">${awaiting.length}</span></div>
+    <div id="approvalsHost"></div>
+
+    <div class="section-title"><h2>All posts</h2><span class="count-badge">${list.length}</span></div>
+    <div id="trackerHost"></div>
+
+    <div class="footer-note">🔒 Shared &amp; live — everyone with this link sees the same data update in real time.</div>
+  `;
+
+  renderCalendar(ready);
+  renderApprovals(awaiting, working);
+  renderTracker(list);
+}
+
+// ---------------- Calendar ----------------
+function renderCalendar(readyList){
+  const byDate = {};
+  readyList.forEach(p=>{
+    const key = p.scheduledDate || p.suggestedDate;
+    if(!key) return;
+    (byDate[key] = byDate[key] || []).push(p);
+  });
+
+  const first = new Date(calYear, calMonth, 1);
+  const startOffset = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
+  const cells = [];
+  for(let i=0;i<startOffset;i++) cells.push({day: daysInPrevMonth - startOffset + 1 + i, outside:true});
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = calYear+"-"+String(calMonth+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    cells.push({day:d, iso, outside:false});
+  }
+  while(cells.length % 7 !== 0) cells.push({day: cells.length - startOffset - daysInMonth + 1, outside:true});
+
+  const today = todayISO();
+  const dow = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const MAX_SHOW = 3;
+  const cellsHtml = cells.map((c,idx)=>{
+    const isWeekend = idx % 7 >= 5;
+    if(c.outside) return `<div class="cal-cell outside"><div class="cal-daynum">${c.day}</div></div>`;
+    const items = byDate[c.iso] || [];
+    const isToday = c.iso === today;
+    const shown = items.slice(0, MAX_SHOW);
+    const extra = items.length - shown.length;
+    return `<div class="cal-cell ${isWeekend?'weekend':''} ${isToday?'today':''} ${items.length?'has-posts':''}">
+      <div class="cal-daynum-row">
+        <span class="cal-daynum">${c.day}</span>
+        ${isToday ? '<span class="today-tag">Today</span>' : ''}
+      </div>
+      ${shown.map(p=>`<div class="cal-post" data-id="${p.id}" style="border-left-color:${STATUS_COLORS[p.status]}">
+          ${platBadge(p.platform)}<span class="cal-post-title">${esc(p.title||"Untitled")}</span>
+        </div>`).join("")}
+      ${extra > 0 ? `<div class="cal-more">+${extra} more</div>` : ""}
+    </div>`;
+  }).join("");
+
+  const monthName = first.toLocaleDateString(undefined,{month:"long", year:"numeric"});
+  const host = document.getElementById("calHost");
+  host.innerHTML = `
+    <div class="cal-wrap">
+      <div class="cal-head">
+        <h2>${esc(monthName)}</h2>
+        <div class="cal-nav">
+          <button class="today-btn" id="calToday">Today</button>
+          <button class="icon-btn" id="calPrev">‹</button>
+          <button class="icon-btn" id="calNext">›</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        ${dow.map(d=>`<div class="cal-dow">${d}</div>`).join("")}
+        ${cellsHtml}
+      </div>
+      <div class="cal-legend">
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:${STATUS_COLORS['Approved']}"></span>Approved</span>
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:${STATUS_COLORS['Scheduled']}"></span>Scheduled</span>
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:${STATUS_COLORS['Posted']}"></span>Posted</span>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:10px;">Only <b>Approved, Scheduled &amp; Posted</b> content shows here — this is the locked, ready-to-schedule view. Drafts live in the sections below.</p>
+  `;
+  document.getElementById("calPrev").addEventListener("click", ()=>{ calMonth--; if(calMonth<0){calMonth=11; calYear--;} renderCalendar(readyList); });
+  document.getElementById("calNext").addEventListener("click", ()=>{ calMonth++; if(calMonth>11){calMonth=0; calYear++;} renderCalendar(readyList); });
+  document.getElementById("calToday").addEventListener("click", ()=>{ calMonth=new Date().getMonth(); calYear=new Date().getFullYear(); renderCalendar(readyList); });
+  host.querySelectorAll(".cal-post").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const p = posts.find(x=>x.id===el.dataset.id);
+      if(p) openPostModal(p);
+    });
+  });
+}
+
+// ---------------- Approvals (needs a decision + in the works) ----------------
+function renderApprovals(awaiting, working){
+  const host = document.getElementById("approvalsHost");
+  const awaitingHtml = awaiting.length ? awaiting.map(approvalCardHTML).join("") : `
+    <div class="empty-state"><span class="big-emoji">✅</span>Nothing waiting on a decision right now.</div>`;
+  host.innerHTML = awaitingHtml;
+
+  host.querySelectorAll(".approval-card").forEach(card=>{
+    const id = card.dataset.id;
+    card.querySelector(".js-approve").addEventListener("click", ()=>{
+      approveOpenId = approveOpenId === id ? null : id;
+      renderApprovals(awaiting, working);
+    });
+    card.querySelector(".js-changes").addEventListener("click", ()=>{
+      const p = posts.find(x=>x.id===id);
+      const note = prompt("What needs to change? (optional — added to Notes)");
+      const patch = { status:"Drafting", updatedAt:Date.now() };
+      if(note){ patch.notes = (p.notes ? p.notes + "\n" : "") + "Sent back: " + note; }
+      db.collection("posts").doc(id).update(patch).catch(()=> toast("Couldn't save — try again.", "#DA4167"));
+    });
+    const confirmRow = card.querySelector(".approve-confirm");
+    if(confirmRow){
+      confirmRow.querySelector(".js-confirm-approve").addEventListener("click", ()=>{
+        const approver = confirmRow.querySelector("input").value.trim();
+        if(!approver){ toast("Add who's approving this first.", "#DA4167"); return; }
+        db.collection("posts").doc(id).update({
+          status:"Approved", clientApprover:approver, approvalDate: todayISO(), updatedAt: Date.now(),
+        }).then(()=>{ approveOpenId = null; }).catch(()=> toast("Couldn't save — try again.", "#DA4167"));
+      });
+    }
+    card.querySelector(".ac-top").addEventListener("click", ()=>{
+      const p = posts.find(x=>x.id===id);
+      if(p) openPostModal(p);
+    });
+  });
+}
+
+function approvalCardHTML(p){
+  const isOpen = approveOpenId === p.id;
+  return `
+    <div class="approval-card" data-id="${p.id}">
+      <div class="ac-top">
+        <h3>${esc(p.title||"Untitled post")}</h3>
+      </div>
+      <div class="ac-meta">
+        ${p.platform ? `<span class="pill">${platBadge(p.platform)} ${esc(p.platform)}</span>` : ""}
+        ${p.suggestedDate ? `<span class="pill">📅 ${esc(fmtDate(p.suggestedDate))}</span>` : ""}
+      </div>
+      <div class="ac-people">
+        ${p.draftOwner ? `Drafted by <b>${esc(p.draftOwner)}</b>. ` : ""}${p.contentDraft ? `🔗 Draft link attached.` : ""}
+      </div>
+      <div class="ac-actions">
+        <button class="btn btn-primary btn-sm js-approve">✅ Approve</button>
+        <button class="btn btn-ghost on-light btn-sm js-changes">✏️ Send back</button>
+      </div>
+      ${isOpen ? `
+        <div class="approve-confirm">
+          <input type="text" placeholder="Approved by (e.g. Kay)" />
+          <button class="btn btn-primary btn-sm js-confirm-approve">Confirm approval</button>
+        </div>` : ""}
+    </div>`;
+}
+
+// ---------------- Tracker table (all posts, integrated) ----------------
+function renderTracker(list){
+  const host = document.getElementById("trackerHost");
+  const filters = ["All"].concat(STATUSES);
+  const q = trackerSearch.trim().toLowerCase();
+  const filtered = list.filter(p=>{
+    if(trackerFilter !== "All" && p.status !== trackerFilter) return false;
+    if(q && !(p.title||"").toLowerCase().includes(q) && !(p.hashtags||"").toLowerCase().includes(q) && !(p.contentDraft||"").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>(a.suggestedDate||"9999").localeCompare(b.suggestedDate||"9999"));
+
+  const rows = filtered.length ? filtered.map(p=>`
+    <tr data-id="${p.id}">
+      <td>
+        <div class="t-title">${p.contentDraft ? "🔗 " : ""}${esc(p.title||"Untitled post")}</div>
+        <div class="t-sub">${p.hashtags ? esc(p.hashtags) : ""}</div>
+      </td>
+      <td>${p.platform ? platBadge(p.platform)+" "+esc(p.platform) : "—"}</td>
+      <td>${p.suggestedDate ? esc(fmtDate(p.suggestedDate)) : "—"}</td>
+      <td><span class="status-chip" style="background:${STATUS_COLORS[p.status]}">${esc(p.status)}</span></td>
+      <td>${esc(p.draftOwner||"—")}</td>
+      <td>${esc(p.clientApprover||"—")}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:26px;">No posts match this filter.</td></tr>`;
+
+  host.innerHTML = `
+    <div class="tracker-controls">
+      ${filters.map(f=>`<button class="chip-filter ${trackerFilter===f?'active':''}" data-f="${esc(f)}">${esc(f)}</button>`).join("")}
+      <input class="search-box" id="trackerSearch" placeholder="Search title, hashtags or content…" value="${esc(trackerSearch)}" />
+    </div>
+    <div class="tracker-table-wrap">
+      <table class="tracker">
+        <thead><tr><th>Post</th><th>Platform</th><th>Date</th><th>Status</th><th>Owner</th><th>Approver</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  host.querySelectorAll(".chip-filter").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ trackerFilter = btn.dataset.f; renderTracker(list); });
+  });
+  const searchInput = host.querySelector("#trackerSearch");
+  // Typing rebuilds this same host's innerHTML (to refilter rows), which would otherwise
+  // recreate the input node and drop focus/cursor after every keystroke — capture and
+  // restore around the re-render so typing feels normal.
+  searchInput.addEventListener("input", ()=>{
+    trackerSearch = searchInput.value;
+    const info = captureFocus();
+    renderTracker(list);
+    restoreFocus(info);
+  });
+  host.querySelectorAll("tbody tr[data-id]").forEach(tr=>{
+    tr.addEventListener("click", ()=>{
+      const p = posts.find(x=>x.id===tr.dataset.id);
+      if(p) openPostModal(p);
+    });
+  });
+}
+
+// ---------------- Overview (manager view) ----------------
+function ringGradient(list){
+  let acc = 0;
+  const stops = [];
+  const total = list.length || 1;
+  STATUSES.forEach(s=>{
+    const n = list.filter(p=>p.status===s).length;
+    if(!n) return;
+    const start = acc/total*360;
+    acc += n;
+    const end = acc/total*360;
+    stops.push(`${STATUS_COLORS[s]} ${start}deg ${end}deg`);
+  });
+  if(!stops.length) return "var(--stone)";
+  return `conic-gradient(${stops.join(",")})`;
+}
+
+function renderOverview(){
+  document.documentElement.style.setProperty("--accent", "#190B28");
+  const cardsHtml = ACCOUNTS.map(acc=>{
+    const list = posts.filter(p=>p.account===acc.id);
+    const readyCount = list.filter(p=>CALENDAR_STATUSES.includes(p.status)).length;
+    const pendingCount = list.filter(p=>p.status==="Sent for Client Approval").length;
+    const workingCount = list.filter(p=>WORK_STATUSES.includes(p.status)).length;
+    const legend = STATUSES.filter(s=>list.some(p=>p.status===s)).map(s=>{
+      const n = list.filter(p=>p.status===s).length;
+      return `<div class="legend-row">
+        <span class="legend-dot" style="background:${STATUS_COLORS[s]}"></span>
+        <span class="legend-label">${esc(s)}</span>
+        <span class="legend-n">${n}</span>
+      </div>`;
+    }).join("") || `<div class="hint" style="margin:0;">No posts logged yet.</div>`;
+
+    return `
+      <div class="stat-card">
+        <div class="stat-card-head">
+          <div class="ring" style="background:${ringGradient(list)}"><span class="ring-num">${list.length}</span></div>
+          <div class="titles">
+            <div class="lbl" style="color:${acc.color}">${esc(acc.label)}</div>
+            <div class="sub">${esc(acc.sub)}</div>
+          </div>
+        </div>
+        <div class="legend">${legend}</div>
+        <div class="mini-stats">
+          <div class="mini-stat"><div class="n" style="color:${STATUS_COLORS['Sent for Client Approval']}">${pendingCount}</div><div class="l">Awaiting decision</div></div>
+          <div class="mini-stat"><div class="n">${workingCount}</div><div class="l">In the works</div></div>
+          <div class="mini-stat"><div class="n" style="color:var(--leaf)">${readyCount}</div><div class="l">Ready to post</div></div>
+        </div>
+      </div>`;
+  }).join("");
+
+  document.getElementById("content").innerHTML = `
+    <p class="hint">One glance across both accounts — switch tabs above to work a specific account.</p>
+    <div class="ov-grid">${cardsHtml}</div>
+    <div class="footer-note">🔒 Shared &amp; live — everyone with this link sees the same data update in real time.</div>
+  `;
+}
+
+// ---------------- Post modal ----------------
+function openPostModal(existing){
+  const isNew = !existing;
+  const p = existing || {
+    account: currentTab === "OVERVIEW" ? ACCOUNTS[0].id : currentTab, title:"", contentDraft:"", platform:"LI", suggestedDate: todayISO(),
+    status:"Idea", draftOwner:"", clientApprover:"",
+    approvalDate:"", scheduledDate:"",
+    hashtags:"", notes:"",
+  };
+  const modal = document.getElementById("postModal");
+  modal.innerHTML = `
+    <div class="modal-head"><h3>${isNew ? "New post" : "Edit post"}</h3></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Account</label>
+        <select id="f_account">${ACCOUNTS.map(a=>`<option value="${a.id}" ${p.account===a.id?"selected":""}>${esc(a.label)}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Title</label><input id="f_title" value="${esc(p.title)}" placeholder="What's the post about?" /></div>
+      <div class="field">
+        <label>Content draft to be posted</label>
+        <div class="draft-link-row">
+          <input type="url" id="f_content" value="${esc(p.contentDraft)}" placeholder="Paste the Google Doc link (copy, images, video all live in the doc)" />
+          <a class="btn btn-ghost on-light btn-sm draft-open-btn" id="f_content_open" href="${esc(p.contentDraft||'#')}" target="_blank" rel="noopener" ${p.contentDraft?"":"hidden"}>🔗 Open</a>
+        </div>
+        <p class="hint" style="margin:6px 0 0;">Kay &amp; Natalie edit, comment and approve right inside the Google Doc — share it as "Anyone with the link can comment" (or edit) so they're not blocked requesting access.</p>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Platform</label>
+          <select id="f_platform">${PLATFORMS.map(pl=>`<option ${p.platform===pl?"selected":""}>${pl}</option>`).join("")}</select>
+        </div>
+        <div class="field"><label>Suggested date</label><input type="date" id="f_date" value="${esc(p.suggestedDate)}" /></div>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="f_status">${STATUSES.map(s=>`<option ${p.status===s?"selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Draft owner</label><input id="f_owner" value="${esc(p.draftOwner)}" placeholder="Amna / Umair" /></div>
+        <div class="field"><label>Client approver</label><input id="f_approver" value="${esc(p.clientApprover)}" placeholder="Kay / Natalie" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Approval date</label><input type="date" id="f_approvalDate" value="${esc(p.approvalDate)}" /></div>
+        <div class="field"><label>Scheduled date</label><input type="date" id="f_scheduledDate" value="${esc(p.scheduledDate)}" /></div>
+      </div>
+      <div class="field"><label>Hashtags</label><input id="f_hashtags" value="${esc(p.hashtags)}" placeholder="#B2B #LeadGen" /></div>
+      <div class="field"><label>Notes</label><textarea id="f_notes">${esc(p.notes)}</textarea></div>
+      <div class="audit-box" id="auditPreview">${esc(auditLog(p))}</div>
+    </div>
+    <div class="modal-foot modal-actions">
+      <div>${!isNew ? `<button class="btn btn-danger" id="deleteBtn">Delete</button>` : ""}</div>
+      <div class="right">
+        <button class="btn btn-ghost on-light" id="cancelBtn">Cancel</button>
+        <button class="btn" id="saveBtn" style="background:var(--midnight); color:#fff;">${isNew?"Add post":"Save changes"}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("postBackdrop").hidden = false;
+
+  const liveFields = ["f_owner","f_approver","f_status","f_approvalDate","f_scheduledDate"];
+  function refreshPreview(){
+    document.getElementById("auditPreview").textContent = auditLog(readForm());
+  }
+  liveFields.forEach(id=> document.getElementById(id).addEventListener("input", refreshPreview));
+  document.getElementById("f_status").addEventListener("change", refreshPreview);
+
+  function readForm(){
+    return {
+      account: document.getElementById("f_account").value,
+      title: document.getElementById("f_title").value.trim(),
+      contentDraft: document.getElementById("f_content").value.trim(),
+      platform: document.getElementById("f_platform").value,
+      suggestedDate: document.getElementById("f_date").value,
+      status: document.getElementById("f_status").value,
+      draftOwner: document.getElementById("f_owner").value.trim(),
+      clientApprover: document.getElementById("f_approver").value.trim(),
+      approvalDate: document.getElementById("f_approvalDate").value,
+      scheduledDate: document.getElementById("f_scheduledDate").value,
+      hashtags: document.getElementById("f_hashtags").value.trim(),
+      notes: document.getElementById("f_notes").value.trim(),
+    };
+  }
+
+  // ---- Content-draft link: keep the "Open" button in sync with what's typed ----
+  const contentInput = document.getElementById("f_content");
+  const contentOpenBtn = document.getElementById("f_content_open");
+  contentInput.addEventListener("input", ()=>{
+    const url = contentInput.value.trim();
+    if(url){ contentOpenBtn.href = url; contentOpenBtn.hidden = false; }
+    else{ contentOpenBtn.hidden = true; }
+  });
+
+  document.getElementById("cancelBtn").addEventListener("click", closePostModal);
+  document.getElementById("postBackdrop").addEventListener("click", (e)=>{ if(e.target.id==="postBackdrop") closePostModal(); });
+
+  document.getElementById("saveBtn").addEventListener("click", async ()=>{
+    const data = readForm();
+    if(!data.title){ toast("Give the post a title first.", "#DA4167"); return; }
+    const saveBtn = document.getElementById("saveBtn");
+    saveBtn.disabled = true; saveBtn.textContent = "Saving…";
+    try{
+      if(isNew){
+        data.createdAt = Date.now();
+        data.updatedAt = Date.now();
+        await db.collection("posts").add(data);
+      } else {
+        data.updatedAt = Date.now();
+        await db.collection("posts").doc(existing.id).update(data);
+      }
+      closePostModal();
+    }catch(err){
+      toast("Couldn't save — try again.", "#DA4167");
+      saveBtn.disabled = false; saveBtn.textContent = isNew?"Add post":"Save changes";
+    }
+  });
+
+  const delBtn = document.getElementById("deleteBtn");
+  if(delBtn){
+    delBtn.addEventListener("click", async ()=>{
+      if(!confirm("Delete this post? This can't be undone.")) return;
+      try{ await db.collection("posts").doc(existing.id).delete(); closePostModal(); }
+      catch(err){ toast("Couldn't delete — try again.", "#DA4167"); }
+    });
+  }
+}
+function closePostModal(){ document.getElementById("postBackdrop").hidden = true; }
+
+boot();
+})();
+</script>
+</body>
+</html>
